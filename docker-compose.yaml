@@ -1,0 +1,15 @@
+services:
+  ecorally-db:
+    image: postgres:14
+    container_name: ecorally-db
+    restart: always
+    ports:
+      - 3080:5432
+    env_file:
+      - .env
+    volumes:
+      - ecorally-db:/var/lib/postgresql/data
+
+volumes:
+  ecorally-db:
+    name: ecorally-docker-db
