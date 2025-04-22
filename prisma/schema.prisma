@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  name           String
+  email          String          @unique
+  password       String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  events         CleanupEvent[]
+  takePart       TakePart[]
+  cleanupResult  CleanupResult[]
+  notifications  Notification[]
+  comments       Comment[]
+  commentReplies CommentReply[]
+}
+
+model CleanupEvent {
+  id            String               @id @default(uuid())
+  name          String
+  description   String
+  startDate     DateTime
+  endDate       DateTime
+  status        EventStatus
+  dates         CleanupEventDate[]
+  imageUrl      String
+  settlementId  String
+  settlement    Settlement           @relation(fields: [settlementId], references: [id])
+  location      CleanupEventLocation @relation(fields: [locationId], references: [id])
+  organizerId   String
+  organizer     User                 @relation(fields: [organizerId], references: [id])
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  locationId    String               @unique
+  takePart      TakePart[]
+  result        CleanupResult?
+  comments      Comment[]
+  notifications Notification[]
+}
+
+model CleanupEventDate {
+  id      String       @id @default(uuid())
+  date    DateTime
+  time    DateTime
+  eventId String
+  event   CleanupEvent @relation(fields: [eventId], references: [id])
+}
+
+model CleanupEventLocation {
+  id        String        @id @default(uuid())
+  latitude  Float
+  longitude Float
+  eventId   String        @unique
+  event     CleanupEvent?
+}
+
+model Region {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  latitude    Float
+  longitude   Float
+  settlements Settlement[]
+}
+
+model Settlement {
+  id        String         @id @default(uuid())
+  name      String
+  regionId  String
+  latitude  Float
+  longitude Float
+  region    Region         @relation(fields: [regionId], references: [id])
+  events    CleanupEvent[]
+
+  @@unique([name, regionId])
+}
+
+model TakePart {
+  id        String       @id @default(uuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  eventId   String
+  event     CleanupEvent @relation(fields: [eventId], references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model CleanupResult {
+  id          String       @id @default(uuid())
+  description String
+  eventId     String       @unique
+  event       CleanupEvent @relation(fields: [eventId], references: [id])
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  photos      String[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model CleanupEquipment {
+  id          String    @id @default(uuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  quantity    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Equipment {
+  id                String             @id @default(uuid())
+  name              String             @unique
+  cleanupEquipments CleanupEquipment[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  message   String
+  eventId   String
+  type      NotificationType
+  event     CleanupEvent     @relation(fields: [eventId], references: [id])
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Comment {
+  id             String         @id @default(uuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id])
+  eventId        String
+  event          CleanupEvent   @relation(fields: [eventId], references: [id])
+  content        String
+  commentReplies CommentReply[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model CommentReply {
+  id        String   @id @default(uuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum NotificationType {
+  EVENT
+  COMMENT
+  REPLY
+}
+
+enum EventStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
