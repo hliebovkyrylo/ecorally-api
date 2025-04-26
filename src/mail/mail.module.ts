@@ -11,8 +11,8 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
         port: 587,
         secure: false,
         auth: {
-          user: 'your_email@gmail.com',
-          pass: 'your_email_password_or_app_password',
+          user: process.env.NODEMAILER_USER || '',
+          pass: process.env.NODEMAILER_PASS || '',
         },
       },
       defaults: {
