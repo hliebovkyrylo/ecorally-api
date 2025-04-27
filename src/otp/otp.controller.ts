@@ -1,5 +1,6 @@
 import { Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { OtpService } from './otp.service';
+import { AuthGuard } from '../common/guards/auth.guard';
 
 @Controller('otp')
 export class OtpController {
@@ -9,6 +10,6 @@ export class OtpController {
   @UseGuards(AuthGuard)
   async sendOtp(@Req() req): Promise<void> {
     const user = req.user;
-    await this.otpService.generateAndSendOtp(req.user);
+    await this.otpService.generateAndSendOtp(user);
   }
 }
