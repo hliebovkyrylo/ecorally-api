@@ -20,7 +20,7 @@ model User {
   notifications  Notification[]
   comments       Comment[]
   commentReplies CommentReply[]
-  otp            OTP[]
+  otp            Otp[]
 }
 
 model CleanupEvent {
@@ -157,7 +157,7 @@ model CommentReply {
   updatedAt DateTime @updatedAt
 }
 
-model OTP {
+model Otp {
   id        String   @id @default(uuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id])
