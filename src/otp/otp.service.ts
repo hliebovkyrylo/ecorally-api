@@ -13,11 +13,23 @@ export class OtpService {
   async generateAndSendOtp(user: User) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    await this.prisma.otp.create({
-      data: {
-        code: otp,
-        userId: user.id,
-      },
+    await this.prisma.$transaction(async (prisma) => {
+      const existingOtp = await prisma.otp.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (existingOtp) {
+        await prisma.otp.delete({ where: { id: existingOtp.id } });
+      }
+
+      await prisma.otp.create({
+        data: {
+          code: otp,
+          userId: user.id,
+        },
+      });
     });
 
     await this.mailService.sendMail({
@@ -25,10 +37,11 @@ export class OtpService {
       subject: 'Confirmation Code',
       template: 'confirm-code',
       context: {
-        otp,
+        email: user.email,
+        code: otp,
       },
     });
 
-    return { message: "Code sent" }
+    return { message: 'Code sent' };
   }
 }

@@ -8,8 +8,8 @@ export class OtpController {
 
   @Post('send')
   @UseGuards(AuthGuard)
-  async sendOtp(@Req() req): Promise<void> {
+  async sendOtp(@Req() req) {
     const user = req.user;
-    await this.otpService.generateAndSendOtp(user);
+    return this.otpService.generateAndSendOtp(user);
   }
 }
