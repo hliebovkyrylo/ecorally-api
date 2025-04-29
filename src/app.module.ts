@@ -5,9 +5,10 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { OtpModule } from './otp/otp.module';
 import { MailModule } from './mail/mail.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, OtpModule, MailModule],
+  imports: [AuthModule, PrismaModule, OtpModule, MailModule, RedisModule],
   controllers: [AppController],
   providers: [AppService],
 })
