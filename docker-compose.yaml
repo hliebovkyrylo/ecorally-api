@@ -9,7 +9,18 @@ services:
       - .env
     volumes:
       - ecorally-db:/var/lib/postgresql/data
+  
+  ecorally-redis:
+    image: redis:7
+    container_name: ecorally-redis
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ecorally-redis:/data
 
 volumes:
   ecorally-db:
     name: ecorally-docker-db
+  ecorally-redis:
+    name: ecorally-docker-redis
