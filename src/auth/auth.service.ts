@@ -6,7 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import * as bcrypt from 'bcrypt';
-import { createAccessToken, createRefreshToken } from 'src/utils/tokens.util';
+import { createAccessToken, createRefreshToken } from '../utils/tokens.util';
 import { SignInDto } from './dto/sign-in.dto';
 
 @Injectable()
