@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards, ValidationPipe } from '@nestjs/common';
 import { OtpService } from './otp.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -70,7 +70,7 @@ export class OtpController {
     status: 409,
     description: 'Provided code is not valid',
   })
-  async checkOtp(@Body() data: CheckOtpDto, @Req() req) {
+  async checkOtp(@Body(ValidationPipe) data: CheckOtpDto, @Req() req) {
     const user = req.user;
     return this.otpService.checkOtp(data, user.id);
   }

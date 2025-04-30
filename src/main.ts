@@ -22,6 +22,7 @@ async function bootstrap() {
         const constrains = validationErrors[0].constraints;
         return new BadRequestException(constrains);
       },
+      transform: true
     }),
   );
 

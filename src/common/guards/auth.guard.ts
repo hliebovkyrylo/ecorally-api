@@ -7,8 +7,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { verifyToken } from 'src/utils/tokens.util';
+import { PrismaService } from '../../prisma/prisma.service';
+import { verifyToken } from '../../utils/tokens.util';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
 @Injectable()
