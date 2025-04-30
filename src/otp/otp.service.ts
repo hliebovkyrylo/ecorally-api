@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { type User } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { CheckOtpDto } from './dto/check-otp.dto';
 
@@ -61,6 +61,16 @@ export class OtpService {
 
       if (!userCode) {
         throw new NotFoundException('Code for this user not found');
+      }
+
+      const isExpired =
+        Date.now() - userCode.createdAt.getTime() >= 10 * 60 * 1000;
+
+      if (isExpired) {
+        await this.prisma.otp.delete({
+          where: { id: userCode.id },
+        });
+        throw new ConflictException('Code expired');
       }
 
       const isValid = await bcrypt.compare(data.code.toString(), userCode.code);
