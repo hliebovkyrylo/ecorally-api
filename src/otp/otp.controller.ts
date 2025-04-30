@@ -1,7 +1,8 @@
-import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { OtpService } from './otp.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { CheckOtpDto } from './dto/check-otp.dto';
 
 @Controller('otp')
 export class OtpController {
@@ -35,5 +36,42 @@ export class OtpController {
   async sendOtp(@Req() req) {
     const user = req.user;
     return this.otpService.generateAndSendOtp(user);
+  }
+
+  @Post('check')
+  @UseGuards(AuthGuard)
+  @ApiOperation({
+    summary: 'Check OTP',
+    description: ' Checks the one time password for the user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Provided OTP is valid',
+    schema: {
+      type: 'object',
+      properties: {
+        isValid: { type: 'boolean', description: 'Is valid provided OTP' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Access token not provided or has expired',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Access token or provided data is not valid',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Otp for this user not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Provided code is not valid',
+  })
+  async checkOtp(@Body() data: CheckOtpDto, @Req() req) {
+    const user = req.user;
+    return this.otpService.checkOtp(data, user.id);
   }
 }
