@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,9 +23,11 @@ async function bootstrap() {
         const constrains = validationErrors[0].constraints;
         return new BadRequestException(constrains);
       },
-      transform: true
+      transform: true,
     }),
   );
+
+  app.use(cookieParser());
 
   await app.listen(process.env.PORT ?? 4000);
 }

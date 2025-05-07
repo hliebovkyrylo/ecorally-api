@@ -12,10 +12,11 @@ describe('AuthController', () => {
   const mockAuthService = {
     signIn: jest.fn(),
     signUp: jest.fn(),
+    refreshToken: jest.fn(),
   };
 
   const mockResponse = {
-    cookie: jest.fn(),
+    cookie: jest.fn().mockReturnThis(),
     send: jest.fn(),
   } as unknown as Response;
 
@@ -99,6 +100,41 @@ describe('AuthController', () => {
       );
       expect(mockResponse.send).toHaveBeenCalledWith({
         accessToken: result.accessToken,
+      });
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should set refreshToken cookie and return accessToken', async () => {
+      const tokens = {
+        accessToken: 'mock-access-token',
+        refreshToken: 'mock-refresh-token',
+      };
+      const req = {
+        headers: { authorization: 'Bearer some-token' },
+        cookies: { refreshToken: 'mock-refresh' },
+      };
+
+      const res = mockResponse;
+      mockAuthService.refreshToken.mockResolvedValue(tokens);
+
+      await controller.refreshToken(res as any, req as any);
+
+      expect(authService.refreshToken).toHaveBeenCalledWith(
+        req.headers.authorization,
+        req.cookies.refreshToken,
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'refreshToken',
+        tokens.refreshToken,
+        expect.objectContaining({
+          httpOnly: true,
+          secure: expect.any(Boolean),
+          sameSite: 'strict',
+        }),
+      );
+      expect(res.send).toHaveBeenCalledWith({
+        accessToken: tokens.accessToken,
       });
     });
   });

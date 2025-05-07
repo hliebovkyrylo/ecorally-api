@@ -8,20 +8,21 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(uuid())
-  name           String
-  email          String          @unique
-  password       String
-  isVerified     Boolean         @default(false)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  events         CleanupEvent[]
-  takePart       TakePart[]
-  cleanupResult  CleanupResult[]
-  notifications  Notification[]
-  comments       Comment[]
-  commentReplies CommentReply[]
-  otp            Otp[]
+  id              String           @id @default(uuid())
+  name            String
+  email           String           @unique
+  password        String
+  isVerified      Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  events          CleanupEvent[]
+  takePart        TakePart[]
+  cleanupResult   CleanupResult[]
+  notifications   Notification[]
+  comments        Comment[]
+  commentReplies  CommentReply[]
+  otp             Otp[]
+  blacklistTokens BlacklistToken[]
 }
 
 model CleanupEvent {
@@ -34,6 +35,7 @@ model CleanupEvent {
   dates         CleanupEventDate[]
   imageUrl      String
   settlementId  String
+  equipments    CleanupEquipment[]
   settlement    Settlement           @relation(fields: [settlementId], references: [id])
   location      CleanupEventLocation @relation(fields: [locationId], references: [id])
   organizerId   String
@@ -106,12 +108,14 @@ model CleanupResult {
 }
 
 model CleanupEquipment {
-  id          String    @id @default(uuid())
+  id          String       @id @default(uuid())
+  eventId     String
+  event       CleanupEvent @relation(fields: [eventId], references: [id])
   equipmentId String
-  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  equipment   Equipment    @relation(fields: [equipmentId], references: [id])
   quantity    Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model Equipment {
@@ -162,7 +166,16 @@ model Otp {
   id        String   @id @default(uuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id])
-  code      String   
+  code      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BlacklistToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
