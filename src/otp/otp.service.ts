@@ -53,7 +53,7 @@ export class OtpService {
     return { message: 'Code sent' };
   }
 
-  async checkOtp(data: CheckOtpDto, userId: string) {
+  async checkOtp(code: number, userId: string) {
     try {
       const userCode = await this.prisma.otp.findUnique({
         where: { userId },
@@ -73,7 +73,7 @@ export class OtpService {
         throw new ConflictException('Code expired');
       }
 
-      const isValid = await bcrypt.compare(data.code.toString(), userCode.code);
+      const isValid = await bcrypt.compare(code.toString(), userCode.code);
 
       if (!isValid) {
         throw new ConflictException('Invalid code');

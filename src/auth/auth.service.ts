@@ -17,10 +17,15 @@ import {
 import { SignInDto } from './dto/sign-in.dto';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { OtpService } from 'src/otp/otp.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly otpService: OtpService,
+  ) {}
 
   async signUp(data: SignUpDto) {
     try {
@@ -129,6 +134,30 @@ export class AuthService {
       }
 
       throw new InternalServerErrorException('Failed to refresh token');
+    }
+  }
+
+  async resetPassword(data: ResetPasswordDto, userId: string) {
+    try {
+      await this.otpService.checkOtp(data.code, userId);
+
+      const hashedNewPassword = await bcrypt.hash(data.password, 8);
+
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedNewPassword },
+      });
+
+      return 'Password was successfully updated';
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('User with such ID not found');
+      }
+
+      throw new InternalServerErrorException('Failed to reset password');
     }
   }
 }

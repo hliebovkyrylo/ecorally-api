@@ -81,6 +81,6 @@ export class OtpController {
   })
   async checkOtp(@Body(ValidationPipe) data: CheckOtpDto, @Req() req: Request) {
     const user = req.user as User;
-    return this.otpService.checkOtp(data, user.id);
+    return this.otpService.checkOtp(data.code, user.id);
   }
 }
