@@ -11,6 +11,7 @@ import {
 import { JsonWebTokenError } from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 import * as tokenUtils from '../utils/tokens.util';
+import { Prisma } from '@prisma/client';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -72,12 +73,14 @@ describe('AuthService', () => {
     });
 
     it('should successfully sign up a user and return tokens', async () => {
-      jest.spyOn(prismaService.user, 'create').mockResolvedValue(user);
+      const createUserSpy = jest
+        .spyOn(prismaService.user, 'create')
+        .mockResolvedValue(user);
 
       const result = await authService.signUp(signUpDto);
 
       expect(bcrypt.hash).toHaveBeenCalledWith(signUpDto.password, 8);
-      expect(prismaService.user.create).toHaveBeenCalledWith({
+      expect(createUserSpy).toHaveBeenCalledWith({
         data: {
           email: signUpDto.email,
           name: 'test',
@@ -90,9 +93,12 @@ describe('AuthService', () => {
     });
 
     it('should throw ConflictException if email already exists', async () => {
-      jest
-        .spyOn(prismaService.user, 'create')
-        .mockRejectedValue({ code: 'P2002' });
+      jest.spyOn(prismaService.user, 'create').mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: '',
+        }),
+      );
 
       await expect(authService.signUp(signUpDto)).rejects.toThrow(
         ConflictException,
@@ -193,10 +199,10 @@ describe('AuthService', () => {
 
       jest
         .spyOn(tokenUtils, 'createAccessToken')
-        .mockResolvedValue(newAccessToken);
+        .mockResolvedValue(newAccessToken as never);
       jest
         .spyOn(tokenUtils, 'createRefreshToken')
-        .mockResolvedValue(newRefreshToken);
+        .mockResolvedValue(newRefreshToken as never);
     });
 
     afterEach(() => {
@@ -213,7 +219,7 @@ describe('AuthService', () => {
     });
 
     it('should throw ForbiddenException if refreshToken is invalid', async () => {
-      jest.spyOn(tokenUtils, 'verifyToken').mockImplementation((token) => {
+      jest.spyOn(tokenUtils, 'verifyToken').mockImplementation(() => {
         throw new JsonWebTokenError('Invalid token');
       });
 

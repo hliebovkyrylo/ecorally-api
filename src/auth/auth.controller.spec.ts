@@ -129,7 +129,7 @@ describe('AuthController', () => {
         tokens.refreshToken,
         expect.objectContaining({
           httpOnly: true,
-          secure: expect.any(Boolean),
+          secure: !!process.env.IS_PRODUCTION,
           sameSite: 'strict',
         }),
       );

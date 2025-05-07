@@ -8,6 +8,8 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { Request } from 'express';
+import { User } from '@prisma/client';
 
 describe('OtpController', () => {
   let otpController: OtpController;
@@ -35,15 +37,25 @@ describe('OtpController', () => {
 
   describe('checkOtp', () => {
     const checkOtpDto: CheckOtpDto = { code: 123456 };
-    const user = { id: 'user-id' };
-    const req = { user };
+    const user: User = {
+      id: 'user-id',
+      name: 'name',
+      email: 'email',
+      password: 'password',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isVerified: true,
+    };
+    const req = { user } as Request;
 
     it('should call otpService.checkOtp with correct parameters', async () => {
-      jest.spyOn(otpService, 'checkOtp').mockResolvedValue({ isValid: true });
+      const checkOtpSpy = jest
+        .spyOn(otpService, 'checkOtp')
+        .mockResolvedValue({ isValid: true });
 
       const response = await otpController.checkOtp(checkOtpDto, req);
 
-      expect(otpService.checkOtp).toHaveBeenCalledWith(checkOtpDto, user.id);
+      expect(checkOtpSpy).toHaveBeenCalledWith(checkOtpDto, user.id);
       expect(response).toEqual({ isValid: true });
     });
 

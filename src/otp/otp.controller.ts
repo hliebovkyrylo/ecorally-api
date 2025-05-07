@@ -1,8 +1,17 @@
-import { Body, Controller, Post, Req, UseGuards, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UseGuards,
+  ValidationPipe,
+} from '@nestjs/common';
 import { OtpService } from './otp.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CheckOtpDto } from './dto/check-otp.dto';
+import { Request } from 'express';
+import { User } from '@prisma/client';
 
 @Controller('otp')
 export class OtpController {
@@ -33,8 +42,8 @@ export class OtpController {
     status: 400,
     description: 'Access token is not valid',
   })
-  async sendOtp(@Req() req) {
-    const user = req.user;
+  async sendOtp(@Req() req: Request) {
+    const user = req.user as User;
     return this.otpService.generateAndSendOtp(user);
   }
 
@@ -70,8 +79,8 @@ export class OtpController {
     status: 409,
     description: 'Provided code is not valid',
   })
-  async checkOtp(@Body(ValidationPipe) data: CheckOtpDto, @Req() req) {
-    const user = req.user;
+  async checkOtp(@Body(ValidationPipe) data: CheckOtpDto, @Req() req: Request) {
+    const user = req.user as User;
     return this.otpService.checkOtp(data, user.id);
   }
 }

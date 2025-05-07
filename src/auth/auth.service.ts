@@ -16,6 +16,7 @@ import {
 } from '../utils/tokens.util';
 import { SignInDto } from './dto/sign-in.dto';
 import { JsonWebTokenError } from 'jsonwebtoken';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class AuthService {
@@ -39,7 +40,10 @@ export class AuthService {
 
       return { accessToken, refreshToken };
     } catch (error) {
-      if (error.code === 'P2002') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException('Email already exists');
       }
       throw error;
@@ -72,7 +76,7 @@ export class AuthService {
     }
 
     try {
-      const userId = await verifyToken(refreshToken);
+      const userId = verifyToken(refreshToken);
       if (!userId) {
         throw new ForbiddenException('Invalid refresh token');
       }
@@ -85,13 +89,13 @@ export class AuthService {
         throw new ForbiddenException('Refresh token is revoked');
       }
 
-      let blacklistData: { token: string; userId: string }[] = [
+      const blacklistData: { token: string; userId: string }[] = [
         { token: refreshToken, userId },
       ];
 
       if (accessToken) {
         try {
-          const accessTokenUserId = await verifyToken(accessToken);
+          const accessTokenUserId = verifyToken(accessToken);
           if (accessTokenUserId && accessTokenUserId === userId) {
             blacklistData.push({ token: accessToken, userId });
           }

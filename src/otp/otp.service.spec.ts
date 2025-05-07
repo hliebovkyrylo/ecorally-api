@@ -51,20 +51,24 @@ describe('OtpService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      jest.spyOn(prismaService.otp, 'findUnique').mockResolvedValue(mockOtp);
+      const findUniqueSpy = jest
+        .spyOn(prismaService.otp, 'findUnique')
+        .mockResolvedValue(mockOtp);
       jest.spyOn(bcrypt as any, 'compare').mockResolvedValue(true);
-      jest.spyOn(prismaService.otp, 'delete').mockResolvedValue(mockOtp);
+      const deleteSpy = jest
+        .spyOn(prismaService.otp, 'delete')
+        .mockResolvedValue(mockOtp);
 
       const result = await otpService.checkOtp(data, userId);
 
-      expect(prismaService.otp.findUnique).toHaveBeenCalledWith({
+      expect(findUniqueSpy).toHaveBeenCalledWith({
         where: { userId },
       });
       expect(bcrypt.compare).toHaveBeenCalledWith(
         data.code.toString(),
         mockOtp.code,
       );
-      expect(prismaService.otp.delete).toHaveBeenCalledWith({
+      expect(deleteSpy).toHaveBeenCalledWith({
         where: { id: mockOtp.id },
       });
       expect(result).toEqual({ isValid: true });
