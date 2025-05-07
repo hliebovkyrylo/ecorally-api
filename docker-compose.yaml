@@ -1,4 +1,22 @@
 services:
+  ecorally-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecorally-api
+    restart: always
+    depends_on:
+      - ecorally-db
+      - ecorally-redis
+    ports:
+      - 3000:3000
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run start:prod
+
   ecorally-db:
     image: postgres:14
     container_name: ecorally-db
