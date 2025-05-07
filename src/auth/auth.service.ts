@@ -18,7 +18,7 @@ import { SignInDto } from './dto/sign-in.dto';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { OtpService } from 'src/otp/otp.service';
+import { OtpService } from '../otp/otp.service';
 
 @Injectable()
 export class AuthService {

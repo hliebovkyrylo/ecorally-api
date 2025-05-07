@@ -55,7 +55,7 @@ describe('OtpController', () => {
 
       const response = await otpController.checkOtp(checkOtpDto, req);
 
-      expect(checkOtpSpy).toHaveBeenCalledWith(checkOtpDto, user.id);
+      expect(checkOtpSpy).toHaveBeenCalledWith(checkOtpDto.code, user.id);
       expect(response).toEqual({ isValid: true });
     });
 

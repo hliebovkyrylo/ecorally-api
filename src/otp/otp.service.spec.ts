@@ -41,7 +41,7 @@ describe('OtpService', () => {
 
   describe('checkOtp', () => {
     const userId = 'user-id';
-    const data = { code: 123456 };
+    const code = 123456;
 
     it('should return { isValid: true } when OTP is valid', async () => {
       const mockOtp = {
@@ -59,13 +59,13 @@ describe('OtpService', () => {
         .spyOn(prismaService.otp, 'delete')
         .mockResolvedValue(mockOtp);
 
-      const result = await otpService.checkOtp(data, userId);
+      const result = await otpService.checkOtp(code, userId);
 
       expect(findUniqueSpy).toHaveBeenCalledWith({
         where: { userId },
       });
       expect(bcrypt.compare).toHaveBeenCalledWith(
-        data.code.toString(),
+        code.toString(),
         mockOtp.code,
       );
       expect(deleteSpy).toHaveBeenCalledWith({
@@ -77,7 +77,7 @@ describe('OtpService', () => {
     it('should throw NotFoundException when OTP is not found', async () => {
       jest.spyOn(prismaService.otp, 'findUnique').mockResolvedValue(null);
 
-      await expect(otpService.checkOtp(data, userId)).rejects.toThrow(
+      await expect(otpService.checkOtp(code, userId)).rejects.toThrow(
         new NotFoundException('Code for this user not found'),
       );
     });
@@ -93,7 +93,7 @@ describe('OtpService', () => {
       jest.spyOn(prismaService.otp, 'findUnique').mockResolvedValue(mockOtp);
       jest.spyOn(bcrypt as any, 'compare').mockResolvedValue(false);
 
-      await expect(otpService.checkOtp(data, userId)).rejects.toThrow(
+      await expect(otpService.checkOtp(code, userId)).rejects.toThrow(
         new ConflictException('Invalid code'),
       );
     });
@@ -103,7 +103,7 @@ describe('OtpService', () => {
         .spyOn(prismaService.otp, 'findUnique')
         .mockRejectedValue(new Error('Database error'));
 
-      await expect(otpService.checkOtp(data, userId)).rejects.toThrow(
+      await expect(otpService.checkOtp(code, userId)).rejects.toThrow(
         new InternalServerErrorException('An unexpected error occurred'),
       );
     });
@@ -118,7 +118,7 @@ describe('OtpService', () => {
       };
       jest.spyOn(prismaService.otp, 'findUnique').mockResolvedValue(mockOtp);
 
-      await expect(otpService.checkOtp(data, userId)).rejects.toThrow(
+      await expect(otpService.checkOtp(code, userId)).rejects.toThrow(
         new ConflictException('Code expired'),
       );
     });

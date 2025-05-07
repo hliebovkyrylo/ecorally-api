@@ -8,7 +8,6 @@ import {
 import { type User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { CheckOtpDto } from './dto/check-otp.dto';
 
 @Injectable()
 export class OtpService {

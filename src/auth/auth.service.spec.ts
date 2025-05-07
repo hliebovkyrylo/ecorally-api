@@ -12,10 +12,15 @@ import { JsonWebTokenError } from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 import * as tokenUtils from '../utils/tokens.util';
 import { Prisma } from '@prisma/client';
+import { OtpService } from '../otp/otp.service';
 
 describe('AuthService', () => {
   let authService: AuthService;
   let prismaService: PrismaService;
+
+  const mockOtpService = {
+    checkOtp: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -27,12 +32,17 @@ describe('AuthService', () => {
             user: {
               create: jest.fn(),
               findUnique: jest.fn(),
+              update: jest.fn(),
             },
             blacklistToken: {
               findUnique: jest.fn(),
               createMany: jest.fn(),
             },
           },
+        },
+        {
+          provide: OtpService,
+          useValue: mockOtpService,
         },
       ],
     }).compile();
@@ -308,6 +318,36 @@ describe('AuthService', () => {
       await expect(
         authService.refreshToken(validAccessToken, validRefreshToken),
       ).rejects.toThrow('Failed to refresh token');
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should return a success message after resetting the password', async () => {
+      const userId = 'userId';
+      const resetPasswordMockData = {
+        code: 123456,
+        password: 'password',
+        confirmPassword: 'confirmPassword',
+      };
+
+      mockOtpService.checkOtp.mockResolvedValue(undefined);
+
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue({ id: userId } as any);
+
+      const result = await authService.resetPassword(
+        resetPasswordMockData,
+        userId,
+      );
+
+      expect(mockOtpService.checkOtp).toHaveBeenCalledWith(123456, userId);
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: { password: expect.any(String) },
+      });
+      expect(result).toBe('Password was successfully updated');
     });
   });
 });
