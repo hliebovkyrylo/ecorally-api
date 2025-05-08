@@ -5,18 +5,48 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { type User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class OtpService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailerService,
+    private readonly redisService: RedisService,
   ) {}
 
-  async generateAndSendOtp(user: User) {
+  async generateAndSendOtp(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true },
+    });
+
+    const rateLimitKey = `otp:rateLimit:${email}`;
+    const otpCooldownKey = `otp:lock:${email}`;
+    const maxAttempts = 5;
+    const ttl = 3600;
+    const cooldownTtl = 60;
+
+    const cooldown = await this.redisService.get(otpCooldownKey);
+    if (cooldown) {
+      throw new ConflictException(
+        'Please wait 1 minute before requesting a new code',
+      );
+    }
+
+    const currentAttempts = await this.redisService.get(rateLimitKey);
+    const attempts = currentAttempts ? parseInt(currentAttempts, 10) : 0;
+
+    if (attempts >= maxAttempts) {
+      throw new ConflictException('Too many requests. Try again later.');
+    }
+
+    if (!user) {
+      return 'Code sent if email exists';
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
 
@@ -48,6 +78,9 @@ export class OtpService {
         code: otp,
       },
     });
+
+    await this.redisService.increment(rateLimitKey, ttl);
+    await this.redisService.set(otpCooldownKey, '1', cooldownTtl);
 
     return { message: 'Code sent' };
   }

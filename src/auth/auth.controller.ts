@@ -102,7 +102,7 @@ export class AuthController {
     });
   }
 
-  @Patch('reset-password')
+  @Patch('reset-password/complete')
   @UseGuards(AuthGuard)
   @ApiOperation({
     summary: 'Reset your own password',

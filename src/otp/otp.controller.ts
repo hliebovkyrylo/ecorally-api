@@ -12,13 +12,13 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CheckOtpDto } from './dto/check-otp.dto';
 import { Request } from 'express';
 import { User } from '@prisma/client';
+import { SendOtpDto } from './dto/send-otp.dto';
 
 @Controller('otp')
 export class OtpController {
   constructor(private readonly otpService: OtpService) {}
 
   @Post('send')
-  @UseGuards(AuthGuard)
   @ApiOperation({
     summary: 'Create OTP',
     description:
@@ -42,9 +42,8 @@ export class OtpController {
     status: 400,
     description: 'Access token is not valid',
   })
-  async sendOtp(@Req() req: Request) {
-    const user = req.user as User;
-    return this.otpService.generateAndSendOtp(user);
+  async sendOtp(@Body() data: SendOtpDto) {
+    return this.otpService.generateAndSendOtp(data.email);
   }
 
   @Post('check')
