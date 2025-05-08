@@ -104,6 +104,26 @@ export class AuthController {
 
   @Patch('reset-password')
   @UseGuards(AuthGuard)
+  @ApiOperation({
+    summary: 'Reset your own password',
+    description: 'If the user has forgotten his password, he can reset it.',
+  })
+  @ApiBody({ type: ResetPasswordDto, description: 'Reset password data' })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully reset his password',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          description: 'Password was successfully updated',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 409, description: 'Provided code is invalid' })
   async resetPassword(
     @Req() req: Request,
     @Res() res: Response,
