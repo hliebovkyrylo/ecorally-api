@@ -14,7 +14,7 @@ import { SignInDto } from './dto/sign-in.dto';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { User } from '@prisma/client';
-import { AuthGuard } from 'src/common/guards/auth.guard';
+import { AuthGuard } from '../common/guards/auth.guard';
 
 @Controller('auth')
 export class AuthController {

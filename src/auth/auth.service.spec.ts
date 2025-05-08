@@ -322,15 +322,15 @@ describe('AuthService', () => {
   });
 
   describe('resetPassword', () => {
-    it('should return a success message after resetting the password', async () => {
-      const userId = 'userId';
-      const resetPasswordMockData = {
-        code: 123456,
-        password: 'password',
-        confirmPassword: 'confirmPassword',
-      };
+    const userId = 'userId';
+    const resetPasswordMockData = {
+      code: 123456,
+      password: 'password',
+      confirmPassword: 'confirmPassword',
+    };
 
-      mockOtpService.checkOtp.mockResolvedValue(undefined);
+    it('should return a success message after resetting the password', async () => {
+      mockOtpService.checkOtp.mockResolvedValue(true);
 
       jest
         .spyOn(prismaService.user, 'update')
@@ -348,6 +348,14 @@ describe('AuthService', () => {
         data: { password: expect.any(String) },
       });
       expect(result).toBe('Password was successfully updated');
+    });
+
+    it('should throw ConflictException when provided code is invalid', async () => {
+      mockOtpService.checkOtp.mockResolvedValue(false);
+
+      await expect(
+        authService.resetPassword(resetPasswordMockData, userId),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });
