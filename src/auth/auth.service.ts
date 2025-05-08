@@ -1,6 +1,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -139,7 +140,10 @@ export class AuthService {
 
   async resetPassword(data: ResetPasswordDto, userId: string) {
     try {
-      await this.otpService.checkOtp(data.code, userId);
+      const isValidCode = await this.otpService.checkOtp(data.code, userId);
+      if (!isValidCode) {
+        throw new ConflictException('Invalid code provided');
+      }
 
       const hashedNewPassword = await bcrypt.hash(data.password, 8);
 
@@ -155,6 +159,10 @@ export class AuthService {
         error.code === 'P2025'
       ) {
         throw new NotFoundException('User with such ID not found');
+      }
+
+      if (error instanceof HttpException) {
+        throw error;
       }
 
       throw new InternalServerErrorException('Failed to reset password');

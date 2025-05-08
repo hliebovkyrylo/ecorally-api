@@ -1,9 +1,20 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Patch,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import { Request, Response } from 'express';
 import { SignInDto } from './dto/sign-in.dto';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { User } from '@prisma/client';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -89,5 +100,18 @@ export class AuthController {
     return res.send({
       accessToken: result.accessToken,
     });
+  }
+
+  @Patch('reset-password')
+  @UseGuards(AuthGuard)
+  async resetPassword(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() data: ResetPasswordDto,
+  ) {
+    const user = req.user as User;
+    const result = await this.authService.resetPassword(data, user.id);
+
+    res.send({ message: result });
   }
 }

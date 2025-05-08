@@ -1,4 +1,5 @@
 import { IsNumber, IsString, Max, Min, MinLength } from 'class-validator';
+import { Match } from '../../common/decorators';
 
 export class ResetPasswordDto {
   @IsNumber()
@@ -11,5 +12,6 @@ export class ResetPasswordDto {
   password: string;
 
   @IsString()
+  @Match('password', { message: 'Passwords do not match' })
   confirmPassword: string;
 }
