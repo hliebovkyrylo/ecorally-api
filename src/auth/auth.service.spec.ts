@@ -322,40 +322,84 @@ describe('AuthService', () => {
   });
 
   describe('resetPassword', () => {
-    const userId = 'userId';
     const resetPasswordMockData = {
+      email: 'test@test.ts',
       code: 123456,
       password: 'password',
       confirmPassword: 'confirmPassword',
     };
+    const userId = 'user-id';
+    const mockUser = {
+      id: 'user-id',
+      email: 'test@test.ts',
+      name: 'test',
+      password: 'hashedPassword',
+      isVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
 
     it('should return a success message after resetting the password', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       mockOtpService.checkOtp.mockResolvedValue(true);
-
+      jest.spyOn(bcrypt as any, 'hash').mockResolvedValue('hashedPassword');
       jest
         .spyOn(prismaService.user, 'update')
-        .mockResolvedValue({ id: userId } as any);
+        .mockResolvedValue(mockUser as any);
 
-      const result = await authService.resetPassword(
-        resetPasswordMockData,
+      const result = await authService.resetPassword(resetPasswordMockData);
+
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: resetPasswordMockData.email },
+      });
+      expect(mockOtpService.checkOtp).toHaveBeenCalledWith(
+        resetPasswordMockData.code,
         userId,
       );
-
-      expect(mockOtpService.checkOtp).toHaveBeenCalledWith(123456, userId);
+      expect(bcrypt.hash).toHaveBeenCalledWith(
+        resetPasswordMockData.password,
+        8,
+      );
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: userId },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data: { password: expect.any(String) },
+        data: { password: 'hashedPassword' },
       });
       expect(result).toBe('Password was successfully updated');
     });
 
+    it('should throw ConflictException when user is not found', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+
+      await expect(
+        authService.resetPassword(resetPasswordMockData),
+      ).rejects.toThrow(new ConflictException('Invalid data provided'));
+    });
+
     it('should throw ConflictException when provided code is invalid', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       mockOtpService.checkOtp.mockResolvedValue(false);
 
       await expect(
-        authService.resetPassword(resetPasswordMockData, userId),
-      ).rejects.toThrow(ConflictException);
+        authService.resetPassword(resetPasswordMockData),
+      ).rejects.toThrow(new ConflictException('Invalid data provided'));
+    });
+
+    it('should throw InternalServerErrorException for unexpected errors', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      mockOtpService.checkOtp.mockResolvedValue(true);
+      jest
+        .spyOn(bcrypt as any, 'hash')
+        .mockRejectedValue(new Error('Unexpected error'));
+
+      await expect(
+        authService.resetPassword(resetPasswordMockData),
+      ).rejects.toThrow(
+        new InternalServerErrorException('Failed to reset password'),
+      );
     });
   });
 });

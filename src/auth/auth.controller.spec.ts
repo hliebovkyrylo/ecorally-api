@@ -6,6 +6,7 @@ import { Response } from 'express';
 import { SignInDto } from './dto/sign-in.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -15,6 +16,7 @@ describe('AuthController', () => {
     signIn: jest.fn(),
     signUp: jest.fn(),
     refreshToken: jest.fn(),
+    resetPassword: jest.fn(),
   };
 
   const mockResponse = {
@@ -151,6 +153,26 @@ describe('AuthController', () => {
       );
       expect(res.send).toHaveBeenCalledWith({
         accessToken: tokens.accessToken,
+      });
+    });
+  });
+
+  describe('reset-password', () => {
+    it('should update user password if valid code provided', async () => {
+      const responseMessage = 'Password was successfully updated';
+      const mockData: ResetPasswordDto = {
+        email: 'test@test.ts',
+        code: 111111,
+        password: '1234567890',
+        confirmPassword: '1234567890',
+      };
+
+      mockAuthService.resetPassword.mockResolvedValue(responseMessage);
+
+      await controller.resetPassword(mockResponse, mockData);
+
+      expect(mockResponse.send).toHaveBeenCalledWith({
+        message: responseMessage,
       });
     });
   });

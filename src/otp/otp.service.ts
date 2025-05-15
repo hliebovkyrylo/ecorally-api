@@ -108,7 +108,7 @@ export class OtpService {
       const isValid = await bcrypt.compare(code.toString(), userCode.code);
 
       if (!isValid) {
-        throw new ConflictException('Invalid code');
+        throw new ConflictException('Invalid data provided');
       }
 
       await this.prisma.otp.delete({

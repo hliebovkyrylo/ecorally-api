@@ -1,8 +1,18 @@
-import { IsNumber, IsString, Max, Min, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNumber,
+  IsString,
+  Max,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { Match } from '../../common/decorators';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ResetPasswordDto {
+  @IsEmail()
+  email: string;
+
   @ApiProperty({
     description: 'Code that user received on email',
     example: '123456',

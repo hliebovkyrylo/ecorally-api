@@ -138,29 +138,30 @@ export class AuthService {
     }
   }
 
-  async resetPassword(data: ResetPasswordDto, userId: string) {
+  async resetPassword(data: ResetPasswordDto) {
     try {
-      const isValidCode = await this.otpService.checkOtp(data.code, userId);
+      const user = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
+
+      if (!user) {
+        throw new ConflictException('Invalid data provided');
+      }
+
+      const isValidCode = await this.otpService.checkOtp(data.code, user.id);
       if (!isValidCode) {
-        throw new ConflictException('Invalid code provided');
+        throw new ConflictException('Invalid data provided');
       }
 
       const hashedNewPassword = await bcrypt.hash(data.password, 8);
 
       await this.prisma.user.update({
-        where: { id: userId },
+        where: { id: user.id },
         data: { password: hashedNewPassword },
       });
 
       return 'Password was successfully updated';
     } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException('User with such ID not found');
-      }
-
       if (error instanceof HttpException) {
         throw error;
       }

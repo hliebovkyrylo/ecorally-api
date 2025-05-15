@@ -1,20 +1,10 @@
-import {
-  Body,
-  Controller,
-  Patch,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Patch, Post, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import { Request, Response } from 'express';
 import { SignInDto } from './dto/sign-in.dto';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { User } from '@prisma/client';
-import { AuthGuard } from '../common/guards/auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -102,8 +92,7 @@ export class AuthController {
     });
   }
 
-  @Patch('reset-password/complete')
-  @UseGuards(AuthGuard)
+  @Patch('reset-password')
   @ApiOperation({
     summary: 'Reset your own password',
     description: 'If the user has forgotten his password, he can reset it.',
@@ -124,13 +113,8 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 409, description: 'Provided code is invalid' })
-  async resetPassword(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Body() data: ResetPasswordDto,
-  ) {
-    const user = req.user as User;
-    const result = await this.authService.resetPassword(data, user.id);
+  async resetPassword(@Res() res: Response, @Body() data: ResetPasswordDto) {
+    const result = await this.authService.resetPassword(data);
 
     res.send({ message: result });
   }
