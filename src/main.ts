@@ -4,9 +4,17 @@ import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import cookie from 'fastify-cookie';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('EcoRally API documentation')
@@ -28,6 +36,8 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
+
+  await app.getHttpAdapter().getInstance().register(cookie);
 
   await app.listen(process.env.PORT ?? 4000);
 }

@@ -10,14 +10,14 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { verifyToken } from '../../utils/tokens.util';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
-import { Request } from 'express';
+import { FastifyRequest } from 'fastify';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const request: Request = ctx.switchToHttp().getRequest();
+    const request: FastifyRequest = ctx.switchToHttp().getRequest();
     const accessToken: string | undefined = request.headers.authorization;
 
     if (!accessToken) {

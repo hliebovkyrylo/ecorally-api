@@ -1,7 +1,7 @@
 import { Body, Controller, Patch, Post, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
-import { Request, Response } from 'express';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { SignInDto } from './dto/sign-in.dto';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -29,7 +29,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 409, description: 'User already exists' })
-  async signUp(@Body() data: SignUpDto, @Res() res: Response) {
+  async signUp(@Body() data: SignUpDto, @Res() res: FastifyReply) {
     const result = await this.authService.signUp(data);
 
     res.cookie('refreshToken', result.refreshToken, {
@@ -60,7 +60,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  async signIn(@Body() data: SignInDto, @Res() res: Response) {
+  async signIn(@Body() data: SignInDto, @Res() res: FastifyReply) {
     const result = await this.authService.signIn(data);
 
     res.cookie('refreshToken', result.refreshToken, {
@@ -73,7 +73,7 @@ export class AuthController {
   }
 
   @Post('refresh-token')
-  async refreshToken(@Res() res: Response, @Req() req: Request) {
+  async refreshToken(@Res() res: FastifyReply, @Req() req: FastifyRequest) {
     const accessToken = req.headers['authorization'];
     const refreshToken = req.cookies.refreshToken as string | undefined;
     const result = await this.authService.refreshToken(
@@ -113,7 +113,10 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 409, description: 'Provided code is invalid' })
-  async resetPassword(@Res() res: Response, @Body() data: ResetPasswordDto) {
+  async resetPassword(
+    @Res() res: FastifyReply,
+    @Body() data: ResetPasswordDto,
+  ) {
     const result = await this.authService.resetPassword(data);
 
     res.send({ message: result });

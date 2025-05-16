@@ -10,7 +10,7 @@ import { OtpService } from './otp.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CheckOtpDto } from './dto/check-otp.dto';
-import { Request } from 'express';
+import { FastifyRequest } from 'fastify';
 import { User } from '@prisma/client';
 import { SendOtpDto } from './dto/send-otp.dto';
 
@@ -78,7 +78,10 @@ export class OtpController {
     status: 409,
     description: 'Provided code is not valid',
   })
-  async checkOtp(@Body(ValidationPipe) data: CheckOtpDto, @Req() req: Request) {
+  async checkOtp(
+    @Body(ValidationPipe) data: CheckOtpDto,
+    @Req() req: FastifyRequest,
+  ) {
     const user = req.user as User;
     return this.otpService.checkOtp(data.code, user.id);
   }

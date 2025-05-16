@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
-import { Response } from 'express';
+import { FastifyReply } from 'fastify';
 import { SignInDto } from './dto/sign-in.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -22,7 +22,7 @@ describe('AuthController', () => {
   const mockResponse = {
     cookie: jest.fn().mockReturnThis(),
     send: jest.fn(),
-  } as unknown as Response;
+  } as unknown as FastifyReply;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

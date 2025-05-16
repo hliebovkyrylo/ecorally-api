@@ -8,7 +8,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { FastifyRequest } from 'fastify';
 import { User } from '@prisma/client';
 
 describe('OtpController', () => {
@@ -46,7 +46,7 @@ describe('OtpController', () => {
       updatedAt: new Date(),
       isVerified: true,
     };
-    const req = { user } as Request;
+    const req = { user } as FastifyRequest;
 
     it('should call otpService.checkOtp with correct parameters', async () => {
       const checkOtpSpy = jest
