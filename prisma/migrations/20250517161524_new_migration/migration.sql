@@ -30,7 +30,6 @@ CREATE TABLE "CleanupEvent" (
     "organizerId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "locationId" TEXT NOT NULL,
 
     CONSTRAINT "CleanupEvent_pkey" PRIMARY KEY ("id")
 );
@@ -39,7 +38,6 @@ CREATE TABLE "CleanupEvent" (
 CREATE TABLE "CleanupEventDate" (
     "id" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
-    "time" TIMESTAMP(3) NOT NULL,
     "eventId" TEXT NOT NULL,
 
     CONSTRAINT "CleanupEventDate_pkey" PRIMARY KEY ("id")
@@ -51,6 +49,7 @@ CREATE TABLE "CleanupEventLocation" (
     "latitude" DOUBLE PRECISION NOT NULL,
     "longitude" DOUBLE PRECISION NOT NULL,
     "eventId" TEXT NOT NULL,
+    "settlementId" TEXT NOT NULL,
 
     CONSTRAINT "CleanupEventLocation_pkey" PRIMARY KEY ("id")
 );
@@ -103,6 +102,7 @@ CREATE TABLE "CleanupResult" (
 -- CreateTable
 CREATE TABLE "CleanupEquipment" (
     "id" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
     "equipmentId" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -185,9 +185,6 @@ CREATE TABLE "BlacklistToken" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CleanupEvent_locationId_key" ON "CleanupEvent"("locationId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "CleanupEventLocation_eventId_key" ON "CleanupEventLocation"("eventId");
 
 -- CreateIndex
@@ -212,13 +209,16 @@ CREATE UNIQUE INDEX "BlacklistToken_token_key" ON "BlacklistToken"("token");
 ALTER TABLE "CleanupEvent" ADD CONSTRAINT "CleanupEvent_settlementId_fkey" FOREIGN KEY ("settlementId") REFERENCES "Settlement"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CleanupEvent" ADD CONSTRAINT "CleanupEvent_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "CleanupEventLocation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "CleanupEvent" ADD CONSTRAINT "CleanupEvent_organizerId_fkey" FOREIGN KEY ("organizerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CleanupEventDate" ADD CONSTRAINT "CleanupEventDate_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "CleanupEvent"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CleanupEventLocation" ADD CONSTRAINT "CleanupEventLocation_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "CleanupEvent"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CleanupEventLocation" ADD CONSTRAINT "CleanupEventLocation_settlementId_fkey" FOREIGN KEY ("settlementId") REFERENCES "Settlement"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Settlement" ADD CONSTRAINT "Settlement_regionId_fkey" FOREIGN KEY ("regionId") REFERENCES "Region"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -234,6 +234,9 @@ ALTER TABLE "CleanupResult" ADD CONSTRAINT "CleanupResult_eventId_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "CleanupResult" ADD CONSTRAINT "CleanupResult_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CleanupEquipment" ADD CONSTRAINT "CleanupEquipment_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "CleanupEvent"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CleanupEquipment" ADD CONSTRAINT "CleanupEquipment_equipmentId_fkey" FOREIGN KEY ("equipmentId") REFERENCES "Equipment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

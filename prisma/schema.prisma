@@ -26,7 +26,7 @@ model User {
 }
 
 model CleanupEvent {
-  id            String               @id @default(uuid())
+  id            String                @id @default(uuid())
   name          String
   description   String
   startDate     DateTime
@@ -36,13 +36,12 @@ model CleanupEvent {
   imageUrl      String
   settlementId  String
   equipments    CleanupEquipment[]
-  settlement    Settlement           @relation(fields: [settlementId], references: [id])
-  location      CleanupEventLocation @relation(fields: [locationId], references: [id])
+  settlement    Settlement            @relation(fields: [settlementId], references: [id])
+  location      CleanupEventLocation? @relation
   organizerId   String
-  organizer     User                 @relation(fields: [organizerId], references: [id])
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  locationId    String               @unique
+  organizer     User                  @relation(fields: [organizerId], references: [id])
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
   takePart      TakePart[]
   result        CleanupResult?
   comments      Comment[]
@@ -52,17 +51,18 @@ model CleanupEvent {
 model CleanupEventDate {
   id      String       @id @default(uuid())
   date    DateTime
-  time    DateTime
   eventId String
   event   CleanupEvent @relation(fields: [eventId], references: [id])
 }
 
 model CleanupEventLocation {
-  id        String        @id @default(uuid())
-  latitude  Float
-  longitude Float
-  eventId   String        @unique
-  event     CleanupEvent?
+  id           String       @id @default(uuid())
+  latitude     Float
+  longitude    Float
+  eventId      String       @unique
+  event        CleanupEvent @relation(fields: [eventId], references: [id])
+  settlementId String
+  settlement   Settlement   @relation("SettlementToLocation", fields: [settlementId], references: [id])
 }
 
 model Region {
@@ -74,13 +74,14 @@ model Region {
 }
 
 model Settlement {
-  id        String         @id @default(uuid())
+  id        String                 @id @default(uuid())
   name      String
   regionId  String
   latitude  Float
   longitude Float
-  region    Region         @relation(fields: [regionId], references: [id])
+  region    Region                 @relation(fields: [regionId], references: [id])
   events    CleanupEvent[]
+  locations CleanupEventLocation[] @relation("SettlementToLocation")
 
   @@unique([name, regionId])
 }
