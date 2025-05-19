@@ -13,13 +13,19 @@ import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { CreateCleanupEventLocationDto } from './dto/create-cleanup-event-location.dto';
 import { NominatimResponse } from './types/nominatim-response';
+import { RedisService } from '../redis/redis.service';
+import { CleanupEvent } from './types/cleanup-event';
 
 @Injectable()
 export class CleanupEventService {
   private readonly nominatimUrl: string;
   private readonly logger = new Logger(CleanupEventService.name);
+  private readonly CACHE_TTL = 300;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {
     this.nominatimUrl =
       process.env.NOMINATIM_URL ||
       'https://nominatim.openstreetmap.org/reverse';
@@ -33,6 +39,74 @@ export class CleanupEventService {
       retries: 3,
       retryDelay: (retryCount: number) => retryCount * 1000,
     });
+  }
+
+  async getCleanupEventById(cleanupEventId: string) {
+    const cacheKey = `cleanup-event:${cleanupEventId}`;
+    const cachedEvent = await this.redisService.get(cacheKey);
+    if (cachedEvent) {
+      this.logger.debug(`Cache hit for cleanup event ${cleanupEventId}`);
+      return JSON.parse(cachedEvent) as CleanupEvent;
+    }
+
+    try {
+      const cleanupEvent = await this.prisma.cleanupEvent.findUnique({
+        where: { id: cleanupEventId },
+        include: {
+          settlement: {
+            select: {
+              name: true,
+              latitude: true,
+              longitude: true,
+              region: {
+                select: {
+                  latitude: true,
+                  longitude: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          location: {
+            select: {
+              latitude: true,
+              longitude: true,
+            },
+          },
+          takePart: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!cleanupEvent) {
+        throw new NotFoundException(
+          `Cleanup event with ID ${cleanupEventId} not found`,
+        );
+      }
+
+      await this.redisService.set(
+        cacheKey,
+        JSON.stringify(cleanupEvent),
+        this.CACHE_TTL,
+      );
+
+      return cleanupEvent;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Failed to retrieve cleanup event',
+      );
+    }
   }
 
   async createCleanupEvent(data: CreateCleanupEventDto, userId: string) {
