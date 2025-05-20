@@ -1,6 +1,6 @@
 import { IsNumber, IsUUID, Min } from 'class-validator';
 
-export class CreateCleanupEquipmentDto {
+export class UpsertCleanupEquipmentDto {
   @IsUUID()
   equipmentId: string;
 

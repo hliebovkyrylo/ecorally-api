@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -8,10 +9,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCleanupEventDto } from './dto/create-cleanup-event.dto';
+import { UpsertCleanupEventDto } from './dto/upsert-cleanup-event.dto';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { CreateCleanupEventLocationDto } from './dto/create-cleanup-event-location.dto';
+import { UpsertCleanupEventLocationDto } from './dto/upsert-cleanup-event-location.dto';
 import { NominatimResponse } from './types/nominatim-response';
 import { RedisService } from '../redis/redis.service';
 import { CleanupEvent } from './types/cleanup-event';
@@ -112,7 +113,7 @@ export class CleanupEventService {
     }
   }
 
-  async createCleanupEvent(data: CreateCleanupEventDto, userId: string) {
+  async createCleanupEvent(data: UpsertCleanupEventDto, userId: string) {
     try {
       const isPointInsideInCorrectSettlement = await this.isPointInSettlement(
         data.location,
@@ -171,6 +172,163 @@ export class CleanupEventService {
     }
   }
 
+  async updateCleanupEvent(
+    data: UpsertCleanupEventDto,
+    cleanupEventId: string,
+    userId: string,
+  ): Promise<CleanupEvent> {
+    try {
+      const cleanupEvent = await this.prisma.cleanupEvent.findUnique({
+        where: { id: cleanupEventId },
+      });
+
+      if (!cleanupEvent) {
+        throw new NotFoundException(
+          `Event with ID ${cleanupEventId} not found.`,
+        );
+      }
+
+      if (cleanupEvent.organizerId !== userId) {
+        throw new ForbiddenException(
+          'You have no access to change this event.',
+        );
+      }
+
+      if (data.startDate && data.endDate && data.startDate > data.endDate) {
+        throw new ConflictException('Date must be before of the end date.');
+      }
+
+      if (data.dates) {
+        const invalidDates = data.dates.filter(
+          (dateDto) =>
+            dateDto.date < data.startDate || dateDto.date > data.endDate,
+        );
+        if (invalidDates.length > 0) {
+          throw new ConflictException(
+            'Dates must be in scope startDate and endDate.',
+          );
+        }
+      }
+
+      const isPointInsideInCorrectSettlement = await this.isPointInSettlement(
+        data.location,
+        data.settlementId,
+      );
+
+      if (!isPointInsideInCorrectSettlement) {
+        throw new ConflictException(
+          'The selected point is outside the selected settlement.',
+        );
+      }
+
+      const updatedEvent = await this.prisma.$transaction(async (tx) => {
+        const updatedCleanupEvent = await tx.cleanupEvent.update({
+          where: { id: cleanupEventId },
+          data: {
+            name: data.name,
+            description: data.description,
+            startDate: data.startDate,
+            endDate: data.endDate,
+            status: data.status,
+            imageUrl: data.imageUrl,
+            settlementId: data.settlementId,
+            organizerId: userId,
+          },
+          include: {
+            settlement: {
+              select: {
+                name: true,
+                latitude: true,
+                longitude: true,
+                region: {
+                  select: {
+                    name: true,
+                    latitude: true,
+                    longitude: true,
+                  },
+                },
+              },
+            },
+            location: {
+              select: {
+                latitude: true,
+                longitude: true,
+              },
+            },
+            takePart: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        await tx.cleanupEventLocation.upsert({
+          where: { eventId: cleanupEventId },
+          update: {
+            latitude: data.location.latitude,
+            longitude: data.location.longitude,
+            settlementId: data.settlementId,
+          },
+          create: {
+            eventId: cleanupEventId,
+            latitude: data.location.latitude,
+            longitude: data.location.longitude,
+            settlementId: data.settlementId,
+          },
+        });
+
+        await Promise.all([
+          tx.cleanupEventDate.deleteMany({
+            where: { eventId: cleanupEventId },
+          }),
+          tx.cleanupEquipment.deleteMany({
+            where: { eventId: cleanupEventId },
+          }),
+        ]);
+
+        await Promise.all([
+          data.dates && data.dates.length > 0
+            ? tx.cleanupEventDate.createMany({
+                data: data.dates.map((dateDto) => ({
+                  eventId: cleanupEventId,
+                  date: dateDto.date,
+                })),
+              })
+            : Promise.resolve(),
+          data.equipments && data.equipments.length > 0
+            ? tx.cleanupEquipment.createMany({
+                data: data.equipments.map((equipmentDto) => ({
+                  eventId: cleanupEventId,
+                  ...equipmentDto,
+                })),
+              })
+            : Promise.resolve(),
+        ]);
+
+        return updatedCleanupEvent;
+      });
+
+      await this.redisService.delete('cleanup-events:*');
+      await this.redisService.delete(`cleanup-event:${cleanupEventId}`);
+
+      return updatedEvent as CleanupEvent;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to update cleanup event');
+    }
+  }
+
   async getCleanupEvents(query: GetCleanupEventsQueryDto) {
     try {
       const skip = (query.page - 1) * query.pageSize;
@@ -219,7 +377,7 @@ export class CleanupEventService {
   }
 
   private async isPointInSettlement(
-    data: CreateCleanupEventLocationDto,
+    data: UpsertCleanupEventLocationDto,
     settlementId: string,
   ) {
     const settlement = await this.prisma.settlement.findUnique({

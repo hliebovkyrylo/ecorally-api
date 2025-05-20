@@ -4,13 +4,14 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { CleanupEventService } from './cleanup-event.service';
-import { CreateCleanupEventDto } from './dto/create-cleanup-event.dto';
+import { UpsertCleanupEventDto } from './dto/upsert-cleanup-event.dto';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { User } from '@prisma/client';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -25,7 +26,7 @@ export class CleanupEventController {
   async createCleanupEvent(
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,
-    @Body() data: CreateCleanupEventDto,
+    @Body() data: UpsertCleanupEventDto,
   ) {
     const user = req.user as User;
     const cleanupEvent = await this.cleanupEventService.createCleanupEvent(
@@ -55,5 +56,23 @@ export class CleanupEventController {
       await this.cleanupEventService.getCleanupEvents(query);
 
     return res.send(cleanupEventsResult);
+  }
+
+  @Put(':cleanupEventId/update')
+  @UseGuards(AuthGuard)
+  async updateCleanupEvent(
+    @Param('cleanupEventId') cleanupEventId: string,
+    @Body() data: UpsertCleanupEventDto,
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply,
+  ) {
+    const user = req.user as User;
+    const cleanupEvent = await this.cleanupEventService.updateCleanupEvent(
+      data,
+      cleanupEventId,
+      user.id,
+    );
+
+    return res.send(cleanupEvent);
   }
 }

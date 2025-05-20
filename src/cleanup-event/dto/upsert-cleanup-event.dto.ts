@@ -9,12 +9,12 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { CreateCleanupEventDateDto } from './create-cleanup-event-dates.dto';
+import { UpsertCleanupEventDateDto } from './upsert-cleanup-event-dates.dto';
 import { Type } from 'class-transformer';
-import { CreateCleanupEquipmentDto } from './create-cleanup-equipment.dto';
-import { CreateCleanupEventLocationDto } from './create-cleanup-event-location.dto';
+import { UpsertCleanupEquipmentDto } from './upsert-cleanup-equipment.dto';
+import { UpsertCleanupEventLocationDto } from './upsert-cleanup-event-location.dto';
 
-export class CreateCleanupEventDto {
+export class UpsertCleanupEventDto {
   @IsString()
   @MinLength(8)
   @MaxLength(100)
@@ -38,8 +38,8 @@ export class CreateCleanupEventDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateCleanupEventDateDto)
-  dates: CreateCleanupEventDateDto[];
+  @Type(() => UpsertCleanupEventDateDto)
+  dates: UpsertCleanupEventDateDto[];
 
   @IsUrl()
   imageUrl: string;
@@ -49,10 +49,10 @@ export class CreateCleanupEventDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateCleanupEquipmentDto)
-  equipments: CreateCleanupEquipmentDto[];
+  @Type(() => UpsertCleanupEquipmentDto)
+  equipments: UpsertCleanupEquipmentDto[];
 
   @ValidateNested()
-  @Type(() => CreateCleanupEventLocationDto)
-  location: CreateCleanupEventLocationDto;
+  @Type(() => UpsertCleanupEventLocationDto)
+  location: UpsertCleanupEventLocationDto;
 }

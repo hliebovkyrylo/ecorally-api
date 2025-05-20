@@ -1,6 +1,6 @@
 import { IsNumber } from 'class-validator';
 
-export class CreateCleanupEventLocationDto {
+export class UpsertCleanupEventLocationDto {
   @IsNumber()
   latitude: number;
 
