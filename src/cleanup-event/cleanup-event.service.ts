@@ -15,6 +15,9 @@ import { CreateCleanupEventLocationDto } from './dto/create-cleanup-event-locati
 import { NominatimResponse } from './types/nominatim-response';
 import { RedisService } from '../redis/redis.service';
 import { CleanupEvent } from './types/cleanup-event';
+import { Prisma } from '@prisma/client';
+import { GetCleanupEventsQueryDto } from './dto/get-cleanup-events-query';
+import { SortBy } from './enum/get-cleanup-events-sort-options.enum';
 
 @Injectable()
 export class CleanupEventService {
@@ -168,6 +171,53 @@ export class CleanupEventService {
     }
   }
 
+  async getCleanupEvents(query: GetCleanupEventsQueryDto) {
+    try {
+      const skip = (query.page - 1) * query.pageSize;
+      const whereClause = this.buildGetCleanupEventsWhereClause(query);
+      const orderByClause = this.buildGetCleanupEventOrderByClause(query);
+
+      const [cleanupEvents, total] = await Promise.all([
+        this.prisma.cleanupEvent.findMany({
+          where: whereClause,
+          orderBy: orderByClause,
+          skip,
+          take: query.pageSize,
+          select: {
+            id: true,
+            name: true,
+            startDate: true,
+            endDate: true,
+            status: true,
+            imageUrl: true,
+            settlement: {
+              select: {
+                id: true,
+                name: true,
+                longitude: true,
+                latitude: true,
+                region: true,
+              },
+            },
+            organizer: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        }),
+        this.prisma.cleanupEvent.count({ where: whereClause }),
+      ]);
+
+      return { cleanupEvents, total };
+    } catch (error: unknown) {
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
   private async isPointInSettlement(
     data: CreateCleanupEventLocationDto,
     settlementId: string,
@@ -209,6 +259,45 @@ export class CleanupEventService {
       throw new InternalServerErrorException(
         'Error while requesting Nominatim',
       );
+    }
+  }
+
+  private buildGetCleanupEventsWhereClause(
+    filters: GetCleanupEventsQueryDto,
+  ): Prisma.CleanupEventWhereInput {
+    const where: Prisma.CleanupEventWhereInput = {};
+
+    if (filters.name) {
+      where.name = { contains: filters.name, mode: 'insensitive' };
+    }
+
+    if (filters.status) where.status = filters.status;
+
+    if (filters.settlementId) where.settlementId = filters.settlementId;
+
+    if (filters.startDate) where.startDate = { gte: filters.startDate };
+
+    if (filters.endDate) where.endDate = { lte: filters.endDate };
+
+    if (filters.regionId) {
+      where.settlement = { region: { id: filters.regionId } };
+    }
+
+    return where;
+  }
+
+  private buildGetCleanupEventOrderByClause(
+    filters: GetCleanupEventsQueryDto,
+  ): Prisma.CleanupEventOrderByWithRelationInput {
+    switch (filters.sortBy) {
+      case SortBy.NAME:
+        return { name: filters.sortOrder || 'asc' };
+      case SortBy.START_DATE:
+        return { startDate: filters.sortOrder || 'asc' };
+      case SortBy.END_DATE:
+        return { endDate: filters.sortOrder || 'asc' };
+      default:
+        return {};
     }
   }
 }

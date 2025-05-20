@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -13,8 +14,9 @@ import { CreateCleanupEventDto } from './dto/create-cleanup-event.dto';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { User } from '@prisma/client';
 import { AuthGuard } from '../common/guards/auth.guard';
+import { GetCleanupEventsQueryDto } from './dto/get-cleanup-events-query';
 
-@Controller('cleanup-event')
+@Controller('cleanup-events')
 export class CleanupEventController {
   constructor(private readonly cleanupEventService: CleanupEventService) {}
 
@@ -42,5 +44,16 @@ export class CleanupEventController {
     const cleanupEvent =
       await this.cleanupEventService.getCleanupEventById(cleanupEventId);
     return res.send(cleanupEvent);
+  }
+
+  @Get()
+  async getCleanupEvents(
+    @Query() query: GetCleanupEventsQueryDto,
+    @Res() res: FastifyReply,
+  ) {
+    const cleanupEventsResult =
+      await this.cleanupEventService.getCleanupEvents(query);
+
+    return res.send(cleanupEventsResult);
   }
 }
