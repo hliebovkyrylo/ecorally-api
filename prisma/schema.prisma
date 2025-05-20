@@ -52,7 +52,7 @@ model CleanupEventDate {
   id      String       @id @default(uuid())
   date    DateTime
   eventId String
-  event   CleanupEvent @relation(fields: [eventId], references: [id])
+  event   CleanupEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model CleanupEventLocation {
@@ -60,7 +60,7 @@ model CleanupEventLocation {
   latitude     Float
   longitude    Float
   eventId      String       @unique
-  event        CleanupEvent @relation(fields: [eventId], references: [id])
+  event        CleanupEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   settlementId String
   settlement   Settlement   @relation("SettlementToLocation", fields: [settlementId], references: [id])
 }
@@ -91,7 +91,7 @@ model TakePart {
   userId    String
   user      User         @relation(fields: [userId], references: [id])
   eventId   String
-  event     CleanupEvent @relation(fields: [eventId], references: [id])
+  event     CleanupEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 }
@@ -100,7 +100,7 @@ model CleanupResult {
   id          String       @id @default(uuid())
   description String
   eventId     String       @unique
-  event       CleanupEvent @relation(fields: [eventId], references: [id])
+  event       CleanupEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   userId      String
   user        User         @relation(fields: [userId], references: [id])
   photos      String[]
@@ -111,7 +111,7 @@ model CleanupResult {
 model CleanupEquipment {
   id          String       @id @default(uuid())
   eventId     String
-  event       CleanupEvent @relation(fields: [eventId], references: [id])
+  event       CleanupEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   equipmentId String
   equipment   Equipment    @relation(fields: [equipmentId], references: [id])
   quantity    Int
@@ -124,7 +124,7 @@ model Equipment {
   name              String             @unique
   cleanupEquipments CleanupEquipment[]
   createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  updatedAt         DateTime           @default(now())
 }
 
 model Notification {
@@ -134,10 +134,10 @@ model Notification {
   message   String
   eventId   String
   type      NotificationType
-  event     CleanupEvent     @relation(fields: [eventId], references: [id])
+  event     CleanupEvent     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  updatedAt DateTime         @default(now())
 }
 
 model Comment {
@@ -145,7 +145,7 @@ model Comment {
   userId         String
   user           User           @relation(fields: [userId], references: [id])
   eventId        String
-  event          CleanupEvent   @relation(fields: [eventId], references: [id])
+  event          CleanupEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
   content        String
   commentReplies CommentReply[]
   createdAt      DateTime       @default(now())

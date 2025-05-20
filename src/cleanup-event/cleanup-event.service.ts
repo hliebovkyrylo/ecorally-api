@@ -329,6 +329,38 @@ export class CleanupEventService {
     }
   }
 
+  async deleteCleanupEvent(cleanupEventId: string, userId: string) {
+    try {
+      const cleanupEvent = await this.prisma.cleanupEvent.findUnique({
+        where: { id: cleanupEventId },
+      });
+
+      if (!cleanupEvent) {
+        throw new NotFoundException(
+          `Cleanup event with ID ${cleanupEventId} not found.`,
+        );
+      }
+
+      if (cleanupEvent.organizerId !== userId) {
+        throw new ForbiddenException(
+          'You have no access to change this content.',
+        );
+      }
+
+      await this.prisma.cleanupEvent.delete({
+        where: { id: cleanupEventId },
+      });
+
+      return 'Cleanup event was successfully deleted.';
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        'Failed to delete a cleanup event.',
+      );
+    }
+  }
+
   async getCleanupEvents(query: GetCleanupEventsQueryDto) {
     try {
       const skip = (query.page - 1) * query.pageSize;

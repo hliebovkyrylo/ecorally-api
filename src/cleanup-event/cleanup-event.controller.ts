@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -74,5 +75,22 @@ export class CleanupEventController {
     );
 
     return res.send(cleanupEvent);
+  }
+
+  @Delete(':cleanupEventId/delete')
+  @UseGuards(AuthGuard)
+  async deleteCleanupEvent(
+    @Param('cleanupEventId') cleanupEventId: string,
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply,
+  ) {
+    const user = req.user as User;
+    const deleteCleanupEventResult =
+      await this.cleanupEventService.deleteCleanupEvent(
+        cleanupEventId,
+        user.id,
+      );
+
+    return res.send({ message: deleteCleanupEventResult });
   }
 }
