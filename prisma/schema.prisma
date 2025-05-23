@@ -8,21 +8,22 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(uuid())
-  name            String
-  email           String           @unique
-  password        String
-  isVerified      Boolean          @default(false)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  events          CleanupEvent[]
-  takePart        TakePart[]
-  cleanupResult   CleanupResult[]
-  notifications   Notification[]
-  comments        Comment[]
-  commentReplies  CommentReply[]
-  otp             Otp[]
-  blacklistTokens BlacklistToken[]
+  id                String              @id @default(uuid())
+  name              String
+  email             String              @unique
+  password          String
+  isVerified        Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  events            CleanupEvent[]
+  takePart          TakePart[]
+  cleanupResult     CleanupResult[]
+  notifications     Notification[]
+  comments          Comment[]
+  commentReplies    CommentReply[]
+  otp               Otp[]
+  blacklistTokens   BlacklistToken[]
+  ContaminatedPoint ContaminatedPoint[]
 }
 
 model CleanupEvent {
@@ -74,14 +75,15 @@ model Region {
 }
 
 model Settlement {
-  id        String                 @id @default(uuid())
-  name      String
-  regionId  String
-  latitude  Float
-  longitude Float
-  region    Region                 @relation(fields: [regionId], references: [id])
-  events    CleanupEvent[]
-  locations CleanupEventLocation[] @relation("SettlementToLocation")
+  id                 String                 @id @default(uuid())
+  name               String
+  regionId           String
+  latitude           Float
+  longitude          Float
+  region             Region                 @relation(fields: [regionId], references: [id])
+  events             CleanupEvent[]
+  locations          CleanupEventLocation[] @relation("SettlementToLocation")
+  contaminatedPoints ContaminatedPoint[]    @relation("SettlementToContaminatedPoint")
 
   @@unique([name, regionId])
 }
@@ -179,6 +181,25 @@ model BlacklistToken {
   token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ContaminatedPoint {
+  id           String                  @id @default(uuid())
+  imageUrl     String
+  name         String
+  description  String
+  status       ContaminatedPointStatus
+  latitude     Float
+  longitude    Float
+  settlementId String
+  settlement   Settlement              @relation("SettlementToContaminatedPoint", fields: [settlementId], references: [id])
+  creatorId    String
+  creator      User                    @relation(fields: [creatorId], references: [id])
+}
+
+enum ContaminatedPointStatus {
+  ACTIVE
+  CLEANED
 }
 
 enum NotificationType {
